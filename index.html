@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>チャットアプリ</title>
+    <style>
+        /* 簡易スタイル */
+        .hidden {
+            display: none;
+        }
+
+        .chat-area {
+            margin-top: 20px;
+        }
+
+        .message {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>秘密のチャットアプリ</h1>
+
+    <div id="initial-setup">
+        <input type="text" id="room" placeholder="部屋番号を入力">
+        <input type="text" id="username" placeholder="名前を入力">
+        <button id="enter-chat">チャットに入る</button>
+    </div>
+
+    <div id="chat-area" class="hidden">
+        <div id="messages"></div>
+        <textarea id="message-box" placeholder="メッセージを入力"></textarea>
+        <button id="send-message">送信</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGoBPBFHTe0sDjnpd6EJkpnXKNAR4NG60",
+            authDomain: "dev28-73c97.firebaseapp.com",
+            databaseURL: "https://dev28-73c97-default-rtdb.firebaseio.com",
+            projectId: "dev28-73c97",
+            storageBucket: "dev28-73c97.firebasestorage.app",
+            messagingSenderId: "794653586549",
+            appId: "1:794653586549:web:8e00e2bfddc1bed5dcf43c",
+            measurementId: "G-YV4YVFPE34"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        let currentRoom = '';
+        let currentUsername = '';
+
+        // 初期設定: 部屋番号と名前を入力
+        document.getElementById('enter-chat').addEventListener('click', () => {
+            const roomInput = document.getElementById('room').value;
+            const usernameInput = document.getElementById('username').value;
+
+            if (!roomInput || !usernameInput) {
+                alert('部屋番号と名前を入力してください。');
+                return;
+            }
+
+            currentRoom = roomInput;
+            currentUsername = usernameInput;
+
+            // 初期画面を非表示にしてチャットエリアを表示
+            document.getElementById('initial-setup').classList.add('hidden');
+            document.getElementById('chat-area').classList.remove('hidden');
+
+            // チャット履歴を自動的に表示
+            const messagesRef = ref(database, `rooms/${currentRoom}/messages`);
+
+            onChildAdded(messagesRef, (snapshot) => {
+                const data = snapshot.val();
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.textContent = `${data.sender}: ${data.text}`;
+                document.getElementById('messages').appendChild(messageDiv);
+            });
+        });
+
+        // メッセージ送信
+        document.getElementById('send-message').addEventListener('click', () => {
+            const messageText = document.getElementById('message-box').value;
+
+            if (!messageText) {
+                alert('メッセージを入力してください。');
+                return;
+            }
+
+            const messagesRef = ref(database, `rooms/${currentRoom}/messages`);
+
+            push(messagesRef, {
+                sender: currentUsername,
+                text: messageText
+            });
+
+            // メッセージボックスをクリア
+            document.getElementById('message-box').value = '';
+        });
+    </script>
+</body>
+
+</html>
